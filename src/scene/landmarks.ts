@@ -269,15 +269,23 @@ export function createIslandLandmarks(): LandmarksController {
       largeFields.add(stalk);
     }
   }
-  // Плетеная изгородь по краю поля
-  for (let x = -2.5; x <= 1.3; x += 0.95) {
-    const fPost = new THREE.Mesh(new THREE.CylinderGeometry(0.05, 0.06, 0.55, 5), woodMid);
-    fPost.position.set(x, 0.28, 1.55);
+  // Плетеная изгородь по краю поля (с привязкой к рельефу и заглублением)
+  const fieldsBaseY = fieldsBase.position.y;
+  const fieldFencePostCoords: Array<[number, number]> = [];
+  for (let x = -2.5; x <= 1.35; x += 0.95) {
+    const postGroundY = getIslandHeight(3 + x, 14 + 1.55) - fieldsBaseY;
+    const fPost = new THREE.Mesh(new THREE.CylinderGeometry(0.05, 0.06, 0.82, 5), woodMid);
+    fPost.position.set(x, postGroundY + 0.18, 1.55);
     largeFields.add(fPost);
+    fieldFencePostCoords.push([x, postGroundY]);
   }
-  const railBar = new THREE.Mesh(new THREE.BoxGeometry(3.9, 0.07, 0.06), woodLight);
-  railBar.position.set(-0.6, 0.42, 1.55);
-  largeFields.add(railBar);
+  for (let i = 0; i < fieldFencePostCoords.length - 1; i++) {
+    const [x1, y1] = fieldFencePostCoords[i];
+    const [x2, y2] = fieldFencePostCoords[i + 1];
+    const p1 = new THREE.Vector3(x1, y1 + 0.42, 1.55);
+    const p2 = new THREE.Vector3(x2, y2 + 0.42, 1.55);
+    largeFields.add(buildFenceRail(p1, p2, 0.032, woodLight, disposables));
+  }
   fieldsBase.add(largeFields);
 
   tagInteractive(fieldsBase, 'plantations', interactiveMeshes);
@@ -306,43 +314,109 @@ export function createIslandLandmarks(): LandmarksController {
   tagInteractive(dachaGroup, 'valley', interactiveMeshes);
   group.add(dachaGroup);
 
-  // 8. Козьи пастбища (-6, -12) (stage >= 11)
+  // 8. Козьи пастбища (-6, -12) (stage >= 11) — столбы, перекладины и козы строго посажены на рельеф холма
+  const pasturesCenterX = -6;
+  const pasturesCenterZ = -12;
+  const pasturesBaseY = getIslandHeight(pasturesCenterX, pasturesCenterZ);
   const pasturesGroup = new THREE.Group();
-  pasturesGroup.position.set(-6, getIslandHeight(-6, -12), -12);
-  // Деревянный загон
-  const penRadius = 2.7;
-  for (let i = 0; i < 12; i++) {
-    const a = (i / 12) * Math.PI * 2;
-    const post = new THREE.Mesh(new THREE.CylinderGeometry(0.06, 0.07, 0.72, 5), woodMid);
-    post.position.set(Math.cos(a) * penRadius, 0.34, Math.sin(a) * penRadius);
-    pasturesGroup.add(post);
-  }
-  const penRing = new THREE.Mesh(new THREE.TorusGeometry(penRadius, 0.045, 5, 18), woodLight);
-  penRing.rotation.x = Math.PI / 2;
-  penRing.position.y = 0.52;
-  pasturesGroup.add(penRing);
+  pasturesGroup.position.set(pasturesCenterX, pasturesBaseY, pasturesCenterZ);
 
-  // 7 стилизованных козочек
+  const penRadius = 2.7;
+  const postCount = 12;
+  const postTopGrounds: THREE.Vector3[] = [];
+  for (let i = 0; i < postCount; i++) {
+    const a = (i / postCount) * Math.PI * 2;
+    const px = Math.cos(a) * penRadius;
+    const pz = Math.sin(a) * penRadius;
+    const localGroundY = getIslandHeight(pasturesCenterX + px, pasturesCenterZ + pz) - pasturesBaseY;
+
+    // Удлинённый столб с заглублением -0.32 в почву
+    const post = new THREE.Mesh(new THREE.CylinderGeometry(0.065, 0.08, 1.05, 6), woodMid);
+    post.position.set(px, localGroundY + 0.2, pz);
+    pasturesGroup.add(post);
+    postTopGrounds.push(new THREE.Vector3(px, localGroundY, pz));
+  }
+
+  // Двухрядные секционные перекладины точно между соседними столбами по рельефу
+  for (let i = 0; i < postCount; i++) {
+    const gA = postTopGrounds[i];
+    const gB = postTopGrounds[(i + 1) % postCount];
+    pasturesGroup.add(
+      buildFenceRail(
+        new THREE.Vector3(gA.x, gA.y + 0.56, gA.z),
+        new THREE.Vector3(gB.x, gB.y + 0.56, gB.z),
+        0.036,
+        woodLight,
+        disposables
+      )
+    );
+    pasturesGroup.add(
+      buildFenceRail(
+        new THREE.Vector3(gA.x, gA.y + 0.3, gA.z),
+        new THREE.Vector3(gB.x, gB.y + 0.3, gB.z),
+        0.03,
+        woodMid,
+        disposables
+      )
+    );
+  }
+
+  // Кормушка, утопленная в землю внутри загона
+  const troughX = 0.05;
+  const troughZ = -0.1;
+  const troughY = getIslandHeight(pasturesCenterX + troughX, pasturesCenterZ + troughZ) - pasturesBaseY;
+  const trough = new THREE.Mesh(new THREE.BoxGeometry(0.85, 0.22, 0.34), woodDark);
+  trough.position.set(troughX, troughY + 0.06, troughZ);
+  trough.rotation.y = 0.3;
+  pasturesGroup.add(trough);
+
+  // 7 стилизованных козочек с 4 ножками, рожками и точной посадкой на почву
   const goats: THREE.Group[] = [];
   const goatPositions: Array<[number, number, number]> = [
-    [-0.9, -0.7, 0.4],
-    [0.8, -0.6, -1.2],
-    [0.1, 0.85, 2.1],
-    [-1.25, 0.5, 0.9],
-    [1.15, 0.45, -0.4],
-    [-0.25, -1.2, 1.5],
-    [0.5, 1.25, -2.3],
+    [-0.95, -0.7, 0.4],
+    [0.85, -0.65, -1.2],
+    [0.12, 0.9, 2.1],
+    [-1.3, 0.55, 0.9],
+    [1.18, 0.48, -0.4],
+    [-0.25, -1.25, 1.5],
+    [0.52, 1.28, -2.3],
   ];
   goatPositions.forEach(([gx, gz, rot], idx) => {
     const goat = new THREE.Group();
     const gMat = idx % 2 === 0 ? goatWhite : goatBrown;
-    const body = new THREE.Mesh(new THREE.BoxGeometry(0.45, 0.28, 0.24), gMat);
-    body.position.y = 0.24;
-    const head = new THREE.Mesh(new THREE.BoxGeometry(0.2, 0.18, 0.16), gMat);
-    head.position.set(0.26, 0.4, 0);
-    goat.add(body, head);
-    goat.position.set(gx, 0, gz);
+    const body = new THREE.Mesh(new THREE.BoxGeometry(0.46, 0.25, 0.23), gMat);
+    body.position.y = 0.31;
+    const head = new THREE.Mesh(new THREE.BoxGeometry(0.2, 0.17, 0.16), gMat);
+    head.position.set(0.26, 0.45, 0);
+    const tail = new THREE.Mesh(new THREE.BoxGeometry(0.08, 0.09, 0.07), gMat);
+    tail.position.set(-0.25, 0.39, 0);
+    goat.add(body, head, tail);
+
+    // 4 ножки от глубины -0.04 до туловища, чтобы твёрдо стоять на склоне
+    const legOffsets: Array<[number, number]> = [
+      [0.14, 0.07],
+      [0.14, -0.07],
+      [-0.15, 0.07],
+      [-0.15, -0.07],
+    ];
+    for (const [lx, lz] of legOffsets) {
+      const leg = new THREE.Mesh(new THREE.CylinderGeometry(0.032, 0.028, 0.24, 5), gMat);
+      leg.position.set(lx, 0.08, lz);
+      goat.add(leg);
+    }
+
+    // Маленькие рожки
+    for (const hz of [-0.045, 0.045]) {
+      const horn = new THREE.Mesh(new THREE.ConeGeometry(0.022, 0.11, 4), woodDark);
+      horn.position.set(0.24, 0.57, hz);
+      horn.rotation.z = -0.35;
+      goat.add(horn);
+    }
+
+    const goatLocalY = getIslandHeight(pasturesCenterX + gx, pasturesCenterZ + gz) - pasturesBaseY;
+    goat.position.set(gx, goatLocalY, gz);
     goat.rotation.y = rot;
+    goat.userData.baseLocalY = goatLocalY;
     pasturesGroup.add(goat);
     goats.push(goat);
   });
@@ -574,10 +648,12 @@ export function createIslandLandmarks(): LandmarksController {
         englishShip.rotation.z = Math.sin(elapsed * 0.95) * 0.03;
       }
 
-      // Лёгкое покачивание козочек на пастбищах
+      // Мягкое движение козочек на пастбищах (ноги плотно стоят на грунте)
       if (pasturesGroup.visible) {
         goats.forEach((g, idx) => {
-          g.position.y = Math.max(0, Math.sin(elapsed * 2.1 + idx * 1.4)) * 0.06;
+          const baseY = (g.userData.baseLocalY as number) ?? 0;
+          g.position.y = baseY;
+          g.rotation.z = Math.sin(elapsed * 1.9 + idx * 1.4) * 0.035;
         });
       }
 
@@ -656,4 +732,22 @@ function buildSailingShip(opts: {
 
   ship.scale.setScalar(opts.scale);
   return ship;
+}
+
+function buildFenceRail(
+  p1: THREE.Vector3,
+  p2: THREE.Vector3,
+  radius: number,
+  material: THREE.Material,
+  disposables: Array<{ dispose: () => void }>
+): THREE.Mesh {
+  const dir = new THREE.Vector3().subVectors(p2, p1);
+  const length = dir.length();
+  const geo = new THREE.CylinderGeometry(radius, radius, length, 5);
+  disposables.push(geo);
+
+  const mesh = new THREE.Mesh(geo, material);
+  mesh.position.addVectors(p1, p2).multiplyScalar(0.5);
+  mesh.quaternion.setFromUnitVectors(new THREE.Vector3(0, 1, 0), dir.normalize());
+  return mesh;
 }

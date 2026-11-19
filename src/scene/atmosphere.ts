@@ -218,11 +218,10 @@ export function createAtmosphere(scene: THREE.Scene, highQuality: boolean): Atmo
   }
   group.add(cloudGroup);
 
-  // Парящие морские птицы + попугай Попка
+  // Попугай Попка (сюжетный спутник у Крепости с этапа 10; чайки убраны)
   const birdsGroup = new THREE.Group();
   const birdWingGeo = new THREE.ConeGeometry(0.18, 0.72, 4);
   birdWingGeo.rotateZ(Math.PI / 2);
-  const gullMat = new THREE.MeshStandardMaterial({ color: '#f8f8f5', roughness: 0.8 });
   const parrotMat = new THREE.MeshStandardMaterial({ color: '#2ea84a', roughness: 0.65 });
   const parrotAccentMat = new THREE.MeshStandardMaterial({ color: '#e6582c', roughness: 0.65 });
 
@@ -238,25 +237,6 @@ export function createAtmosphere(scene: THREE.Scene, highQuality: boolean): Atmo
   }
 
   const birds: BirdInstance[] = [];
-  for (let i = 0; i < 6; i++) {
-    const root = new THREE.Group();
-    const lw = new THREE.Mesh(birdWingGeo, gullMat);
-    lw.position.x = -0.25;
-    const rw = new THREE.Mesh(birdWingGeo, gullMat);
-    rw.rotation.y = Math.PI;
-    rw.position.x = 0.25;
-    root.add(lw, rw);
-    birdsGroup.add(root);
-    birds.push({
-      root,
-      leftWing: lw,
-      rightWing: rw,
-      radius: 10 + (i % 3) * 6,
-      speed: 0.22 + i * 0.04,
-      phase: i * 1.3,
-      center: new THREE.Vector3((i % 2 === 0 ? 8 : -10), 11 + (i % 3) * 2.2, (i - 2.5) * 4),
-    });
-  }
 
   // Попка кружит около Крепости начиная с этапа 10
   const parrotRoot = new THREE.Group();
@@ -369,7 +349,6 @@ export function createAtmosphere(scene: THREE.Scene, highQuality: boolean): Atmo
       cloudGeo.dispose();
       cloudMat.dispose();
       birdWingGeo.dispose();
-      gullMat.dispose();
       parrotMat.dispose();
       parrotAccentMat.dispose();
     },

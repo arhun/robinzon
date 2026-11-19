@@ -54,4 +54,20 @@ describe('Рельеф острова (getIslandHeight)', () => {
     expect(Math.abs(n.length() - 1)).toBeLessThan(1e-5);
     expect(n.y).toBeGreaterThan(0);
   });
+
+  it('обеспечивает ровный холм под всеми 12 опорами загона коз (-6, -12)', () => {
+    const cx = -6;
+    const cz = -12;
+    const centerH = getIslandHeight(cx, cz);
+    expect(centerH).toBeGreaterThan(3.0);
+
+    for (let i = 0; i < 12; i++) {
+      const a = (i / 12) * Math.PI * 2;
+      const px = cx + Math.cos(a) * 2.7;
+      const pz = cz + Math.sin(a) * 2.7;
+      const h = getIslandHeight(px, pz);
+      expect(h).toBeGreaterThan(2.8);
+      expect(Math.abs(h - centerH)).toBeLessThan(0.45);
+    }
+  });
 });

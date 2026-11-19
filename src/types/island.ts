@@ -10,6 +10,17 @@ export type TimeOfDay = 'day' | 'sunset' | 'night';
 export type MapMode = 'chronology' | 'all';
 export type QualityMode = 'balanced' | 'high';
 
+export interface ClubInfo {
+  name: string;
+  subtitle: string;
+  established: string;
+  lines: string[];
+  telegramLabel: string;
+  telegramUrl: string;
+  instagramLabel: string;
+  instagramUrl: string;
+}
+
 export interface IslandLocation {
   id: string;
   name: string;
@@ -27,6 +38,7 @@ export interface IslandLocation {
   details: string;
   facts: string[];
   isWater?: boolean;
+  clubInfo?: ClubInfo;
 }
 
 export interface ChronologyEvent {

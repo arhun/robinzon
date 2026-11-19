@@ -55,4 +55,15 @@ describe('Целостность справочника и хронологии 
       expect(art.bullets.length).toBeGreaterThanOrEqual(3);
     }
   });
+
+  it('содержит актуальную информацию о книжном клубе kitab tdk у монумента', () => {
+    const monument = ISLAND_LOCATIONS.find((l) => l.id === 'club_monument');
+    expect(monument?.clubInfo).toBeDefined();
+    expect(monument?.clubInfo?.name).toBe('kitab tdk');
+    expect(monument?.clubInfo?.subtitle).toContain('Талдықорған Кітап клубы');
+    expect(monument?.clubInfo?.established).toContain('Est. 2022');
+    expect(monument?.clubInfo?.lines).toHaveLength(2);
+    expect(monument?.clubInfo?.telegramUrl).toBe('https://t.me/kitab_tdk');
+    expect(monument?.clubInfo?.instagramUrl).toBe('https://www.instagram.com/kitab_tdk/');
+  });
 });

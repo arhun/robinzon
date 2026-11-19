@@ -1,12 +1,14 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { IslandViewport } from './components/IslandViewport';
 import { LocationSheet } from './components/LocationSheet';
+import { MusicControls } from './components/MusicControls';
 import { ReferenceDrawer } from './components/ReferenceDrawer';
 import { TimelineBar } from './components/TimelineBar';
 import { TopBar } from './components/TopBar';
 import { WelcomeOverlay } from './components/WelcomeOverlay';
 import { CHRONOLOGY_EVENTS } from './data/chronology';
 import { ISLAND_LOCATIONS } from './data/locations';
+import { useBackgroundMusic } from './hooks/useBackgroundMusic';
 import { parseInitialUrlState, useUrlStateSync } from './hooks/useUrlState';
 import { IslandSceneManager } from './scene/IslandSceneManager';
 import type { ChronologyEvent, IslandLocation, MapMode, QualityMode, TimeOfDay } from './types/island';
@@ -45,6 +47,7 @@ export const App: React.FC = () => {
 
   const sceneRef = useRef<IslandSceneManager | null>(null);
   const compassNeedleRef = useRef<HTMLSpanElement | null>(null);
+  const music = useBackgroundMusic();
 
   const stageEvent = useMemo(
     () => CHRONOLOGY_EVENTS.find((ev) => ev.stage === stage) ?? CHRONOLOGY_EVENTS[0],
@@ -282,6 +285,13 @@ export const App: React.FC = () => {
         onCycleTimeOfDay={handleCycleTime}
         onToggleRoutes={() => setShowRoutes((v) => !v)}
         onResetOverview={handleResetOverview}
+      />
+
+      <MusicControls
+        isPlaying={music.isPlaying}
+        volume={music.volume}
+        onTogglePlay={music.togglePlay}
+        onChangeVolume={music.setVolume}
       />
 
       <TimelineBar

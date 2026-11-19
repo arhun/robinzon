@@ -25,7 +25,7 @@ function isNearProtectedLandmark(x: number, z: number): boolean {
     if (loc.id === 'fortress') minClear = 5.4;
     if (loc.id === 'plantations') minClear = 4.8;
     if (loc.id === 'valley') minClear = 4.4;
-    if (loc.id === 'pastures') minClear = 4.6;
+    if (loc.id === 'pastures') minClear = 5.5;
     if (loc.id === 'club_monument') minClear = 5.0;
     if (loc.id === 'first_canoe') minClear = 3.6;
     if (loc.id === 'footprint_beach') minClear = 3.8;

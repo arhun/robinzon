@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { ChevronDown, ChevronLeft, ChevronRight, ChevronUp, Share2, X } from 'lucide-react';
+import { ChevronDown, ChevronLeft, ChevronRight, ChevronUp, ExternalLink, Share2, X } from 'lucide-react';
 import { CHRONOLOGY_EVENTS } from '../data/chronology';
 import { CATEGORY_LABELS, type ChronologyEvent, type IslandLocation } from '../types/island';
 
@@ -76,6 +76,40 @@ export const LocationSheet: React.FC<LocationSheetProps> = ({
       </div>
 
       <div className="sheet-body">
+        {location.clubInfo && (
+          <section className="club-info-card" aria-label="Информация о клубе kitab tdk">
+            <div className="club-info-eyebrow">info:</div>
+            <div className="club-info-name">{location.clubInfo.name}</div>
+            <div className="club-info-subtitle">{location.clubInfo.subtitle}</div>
+            <div className="club-info-line">{location.clubInfo.established}</div>
+            {location.clubInfo.lines.map((line, idx) => (
+              <div key={idx} className="club-info-line">
+                {line}
+              </div>
+            ))}
+            <div className="club-info-links">
+              <a
+                href={location.clubInfo.telegramUrl}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="club-link-pill"
+              >
+                <span>{location.clubInfo.telegramLabel}</span>
+                <ExternalLink size={12} />
+              </a>
+              <a
+                href={location.clubInfo.instagramUrl}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="club-link-pill"
+              >
+                <span>insta: {location.clubInfo.instagramLabel}</span>
+                <ExternalLink size={12} />
+              </a>
+            </div>
+          </section>
+        )}
+
         <p className="sheet-lead">{activeEvent ? activeEvent.summary : location.summary}</p>
 
         {activeEvent?.quote && <blockquote className="sheet-quote">{activeEvent.quote}</blockquote>}
@@ -84,7 +118,7 @@ export const LocationSheet: React.FC<LocationSheetProps> = ({
 
         <div>
           <div className="section-caption" style={{ marginBottom: 6 }}>
-            Детали и факты из романа
+            {location.category === 'monument' ? 'О монументе' : 'Детали и факты из романа'}
           </div>
           <ul className="facts-list">
             {(activeEvent ? activeEvent.facts : location.facts).map((fact, idx) => (

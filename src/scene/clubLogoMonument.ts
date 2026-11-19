@@ -4,6 +4,8 @@ import clubLogoSvgRaw from '../assets/logo.svg?raw';
 import { createFernRosetteGeometry } from './flora';
 import { getIslandHeight } from './terrain';
 
+export const CLUB_LOGO_SCALE = 0.0048; // Уменьшено на 50% от исходного 0.0096
+
 export interface LogoGeometryBuildResult {
   geometry: THREE.ExtrudeGeometry;
   shapes: THREE.Shape[];
@@ -40,7 +42,7 @@ export function buildClubLogoGeometry(svgMarkup: string): LogoGeometryBuildResul
   geometry.center();
   // Поворот вокруг X на 180° поднимает SVG-ось Y вверх без зеркалирования X и без выворачивания граней
   geometry.rotateX(Math.PI);
-  geometry.scale(0.0096, 0.0096, 0.0096);
+  geometry.scale(CLUB_LOGO_SCALE, CLUB_LOGO_SCALE, CLUB_LOGO_SCALE);
   geometry.computeVertexNormals();
 
   return { geometry, shapes, holesCount };
@@ -75,11 +77,11 @@ export function createClubLogoMonument(): ClubLogoMonumentController {
   disposables.push(pedestalMat);
 
   const rockSpecs: Array<[number, number, number, number, number, number]> = [
-    [0, 0.35, 0, 3.1, 1.0, 2.2],
-    [-1.7, 0.15, 0.65, 1.5, 0.85, 1.3],
-    [1.85, 0.2, -0.4, 1.6, 0.95, 1.35],
-    [0.45, 0.12, 1.25, 1.75, 0.7, 1.15],
-    [-0.9, 0.18, -1.1, 1.5, 0.8, 1.1],
+    [0, 0.2, 0, 1.85, 0.62, 1.35],
+    [-1.0, 0.08, 0.38, 0.92, 0.52, 0.8],
+    [1.1, 0.12, -0.25, 0.96, 0.58, 0.82],
+    [0.26, 0.08, 0.72, 1.05, 0.44, 0.72],
+    [-0.52, 0.1, -0.65, 0.9, 0.5, 0.68],
   ];
   const baseRockGeo = new THREE.DodecahedronGeometry(1.0, 1);
   disposables.push(baseRockGeo);
@@ -95,7 +97,7 @@ export function createClubLogoMonument(): ClubLogoMonumentController {
   }
   group.add(pedestalGroup);
 
-  // 2. Трёхмерный логотип клуба
+  // 2. Трёхмерный логотип клуба (масштаб уменьшен на 50%)
   const { geometry: logoGeo } = buildClubLogoGeometry(clubLogoSvgRaw);
   disposables.push(logoGeo);
 
@@ -114,15 +116,15 @@ export function createClubLogoMonument(): ClubLogoMonumentController {
 
   // Устанавливаем логотип чуть вросшим в каменный цоколь с лёгким натуральным наклоном назад
   const logoMount = new THREE.Group();
-  logoMount.position.set(0, 0.72 + logoHeight * 0.48, 0);
+  logoMount.position.set(0, 0.42 + logoHeight * 0.48, 0);
   logoMount.rotation.x = -0.09;
   logoMount.add(logoMesh);
   group.add(logoMount);
 
   // 3. Физические объёмные 3D-подушки мха прямо на верхних кромках логотипа
-  const mossCushionPositions = sampleTopSurfaces(logoGeo, 88);
+  const mossCushionPositions = sampleTopSurfaces(logoGeo, 84);
   if (mossCushionPositions.length > 0) {
-    const cushionGeo = new THREE.DodecahedronGeometry(0.16, 1);
+    const cushionGeo = new THREE.DodecahedronGeometry(0.092, 1);
     cushionGeo.scale(1.35, 0.62, 1.15);
     const cushionMat = new THREE.MeshStandardMaterial({
       color: '#4f7f38',
@@ -139,7 +141,7 @@ export function createClubLogoMonument(): ClubLogoMonumentController {
     mossCushionPositions.forEach((pt, idx) => {
       dummy.position.copy(pt);
       dummy.rotation.set(((idx * 17) % 10) * 0.04, idx * 1.1, ((idx * 13) % 10) * 0.04);
-      const scale = 0.7 + ((idx * 29) % 10) * 0.07;
+      const scale = 0.72 + ((idx * 29) % 10) * 0.065;
       dummy.scale.set(scale, scale * 0.85, scale);
       dummy.updateMatrix();
       cushions.setMatrixAt(idx, dummy.matrix);
@@ -153,7 +155,7 @@ export function createClubLogoMonument(): ClubLogoMonumentController {
 
   // 4. Свисающие лианы и мелкие листочки вдоль изгибов логотипа
   const vineMat = new THREE.MeshStandardMaterial({ color: '#396127', roughness: 0.9 });
-  const leafGeo = new THREE.OctahedronGeometry(0.11, 0);
+  const leafGeo = new THREE.OctahedronGeometry(0.068, 0);
   leafGeo.scale(1.2, 0.4, 0.85);
   const leafMat = new THREE.MeshStandardMaterial({
     color: '#5c913e',
@@ -164,50 +166,50 @@ export function createClubLogoMonument(): ClubLogoMonumentController {
 
   const vinePaths: Array<Array<[number, number, number]>> = [
     [
-      [-1.7, 2.35, 0.52],
-      [-1.8, 1.55, 0.56],
-      [-1.62, 0.65, 0.5],
-      [-1.75, -0.35, 0.45],
+      [-0.85, 1.18, 0.26],
+      [-0.9, 0.78, 0.28],
+      [-0.81, 0.32, 0.25],
+      [-0.88, -0.18, 0.23],
     ],
     [
-      [-0.25, 2.38, -0.48],
-      [0.05, 1.65, -0.52],
-      [0.35, 0.85, -0.45],
-      [0.15, 0.05, -0.5],
+      [-0.12, 1.19, -0.24],
+      [0.03, 0.82, -0.26],
+      [0.18, 0.42, -0.22],
+      [0.08, 0.03, -0.25],
     ],
     [
-      [1.2, 2.35, 0.48],
-      [1.45, 1.62, 0.55],
-      [1.3, 0.95, 0.42],
-      [0.82, 0.35, 0.52],
+      [0.6, 1.18, 0.24],
+      [0.72, 0.81, 0.27],
+      [0.65, 0.48, 0.21],
+      [0.41, 0.18, 0.26],
     ],
     [
-      [2.1, 1.75, 0.42],
-      [2.32, 0.95, 0.48],
-      [1.92, 0.25, 0.5],
+      [1.05, 0.88, 0.21],
+      [1.16, 0.48, 0.24],
+      [0.96, 0.12, 0.25],
     ],
     [
-      [0.85, -0.15, 0.48],
-      [1.35, -0.82, 0.54],
-      [1.55, -1.65, 0.48],
-      [1.25, -2.25, 0.52],
+      [0.42, -0.08, 0.24],
+      [0.68, -0.41, 0.27],
+      [0.78, -0.82, 0.24],
+      [0.62, -1.12, 0.26],
     ],
     [
-      [-1.55, -0.85, -0.48],
-      [-1.42, -1.55, -0.52],
-      [-1.6, -2.2, -0.46],
+      [-0.78, -0.42, -0.24],
+      [-0.71, -0.78, -0.26],
+      [-0.8, -1.1, -0.23],
     ],
     [
-      [2.15, -0.8, -0.4],
-      [2.35, -1.55, -0.48],
-      [2.05, -2.15, -0.42],
+      [1.08, -0.4, -0.2],
+      [1.18, -0.78, -0.24],
+      [1.02, -1.08, -0.21],
     ],
   ];
 
   const leafPositions: THREE.Vector3[] = [];
   for (const pts of vinePaths) {
     const curve = new THREE.CatmullRomCurve3(pts.map(([x, y, z]) => new THREE.Vector3(x, y, z)));
-    const vineGeo = new THREE.TubeGeometry(curve, 14, 0.036, 5, false);
+    const vineGeo = new THREE.TubeGeometry(curve, 14, 0.022, 5, false);
     const vineMesh = new THREE.Mesh(vineGeo, vineMat);
     vineMesh.castShadow = true;
     logoMount.add(vineMesh);
@@ -242,11 +244,11 @@ export function createClubLogoMonument(): ClubLogoMonumentController {
   disposables.push(fernGeo, fernMat);
 
   const fernSpots: Array<[number, number, number, number]> = [
-    [-2.1, 0.52, 0.95, 1.05],
-    [2.15, 0.52, 0.75, 1.1],
-    [-0.45, 0.6, 1.05, 0.9],
-    [1.1, 0.56, -0.95, 0.95],
-    [-1.4, 0.54, -0.85, 0.85],
+    [-1.25, 0.24, 0.58, 0.65],
+    [1.28, 0.24, 0.45, 0.68],
+    [-0.25, 0.34, 0.62, 0.58],
+    [0.68, 0.28, -0.58, 0.6],
+    [-0.85, 0.28, -0.52, 0.55],
   ];
   const ferns = new THREE.InstancedMesh(fernGeo, fernMat, fernSpots.length);
   const fDummy = new THREE.Object3D();
@@ -358,8 +360,8 @@ function createMossyStoneMaterial(
         '#include <color_fragment>',
         /* glsl */ `
         #include <color_fragment>
-        float n1 = mossFbm(vMossWorldPos * 1.15);
-        float n2 = mossFbm(vMossWorldPos * 3.8 + vec3(5.2));
+        float n1 = mossFbm(vMossWorldPos * 1.55);
+        float n2 = mossFbm(vMossWorldPos * 4.8 + vec3(5.2));
 
         // Тёплое выветривание песчаника и потемнение в трещинах
         vec3 darkStone = diffuseColor.rgb * 0.58;
@@ -368,7 +370,7 @@ function createMossyStoneMaterial(
         // Верхние полки и фаски мягко покрываются густым мхом
         float topMask = smoothstep(0.08, 0.68, vMossWorldNormal.y + (n1 - 0.42) * 0.52);
         // Нижняя часть монумента, врастающая в утёс, также зарастает мхом
-        float baseMask = (1.0 - smoothstep(-2.45, -0.5, vMossLocalPos.y)) * (0.5 + 0.5 * n1);
+        float baseMask = (1.0 - smoothstep(-1.25, -0.25, vMossLocalPos.y)) * (0.5 + 0.5 * n1);
         // Пятна лишайника на вертикальных гранях
         float sideSpots = smoothstep(0.56, 0.78, n1 * 0.65 + n2 * 0.35) * 0.78;
 
@@ -422,7 +424,7 @@ function sampleTopSurfaces(geometry: THREE.BufferGeometry, targetCount: number):
       const ab = new THREE.Vector3().subVectors(b, a);
       const ac = new THREE.Vector3().subVectors(c, a);
       const area = ab.cross(ac).length() * 0.5;
-      const samples = Math.min(8, Math.max(1, Math.round(area * 12)));
+      const samples = Math.min(8, Math.max(1, Math.round(area * 42)));
       for (let s = 0; s < samples; s++) {
         // Квазиравномерные барицентрические координаты внутри треугольника
         const u = ((s * 0.6180339887) % 1) * 0.8 + 0.1;
@@ -432,7 +434,7 @@ function sampleTopSurfaces(geometry: THREE.BufferGeometry, targetCount: number):
           .addScaledVector(a, u)
           .addScaledVector(b, v)
           .addScaledVector(c, w);
-        pt.y += 0.04;
+        pt.y += 0.025;
         candidates.push(pt);
       }
     }
@@ -446,7 +448,7 @@ function sampleTopSurfaces(geometry: THREE.BufferGeometry, targetCount: number):
     // Фильтруем слишком близкие дубликаты
     let tooClose = false;
     for (const existing of picked) {
-      if (existing.distanceToSquared(pt) < 0.08) {
+      if (existing.distanceToSquared(pt) < 0.022) {
         tooClose = true;
         break;
       }

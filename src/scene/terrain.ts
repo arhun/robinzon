@@ -126,6 +126,11 @@ export function getIslandHeight(x: number, z: number): number {
   const valleyBowl = gauss(x, z, -12, 4, 5.8, 4.8);
   h = h * (1 - valleyBowl * 0.55) + 2.8 * (valleyBowl * 0.55);
 
+  // Козьи пастбища (-6, -12) — травянистый холм с ровной площадкой на вершине под загон и стадо
+  const pDist = Math.hypot((x + 6) / 1.05, z + 12);
+  const pasturesPad = 1 - smoothstep(2.8, 6.2, pDist);
+  h = h * (1 - pasturesPad * 0.94) + 3.65 * (pasturesPad * 0.94);
+
   // Терраса Крепости (10, 10) — ровная площадка у подножия скалы
   const fortPad = gauss(x, z, 10, 10, 3.4, 3.1);
   h = h * (1 - fortPad * 0.88) + 2.15 * (fortPad * 0.88);
@@ -257,6 +262,12 @@ export function createIslandTerrain(highQuality: boolean): TerrainBuildResult {
     const streamD = distanceToStream(x, z);
     if (y > 0.15 && streamD < 1.6) {
       tempColor.lerp(cStreamBank, (1 - smoothstep(0.3, 1.6, streamD)) * 0.55);
+    }
+
+    // Тёплый травянистый луг на холме Козьих пастбищ (-6, -12)
+    const pastureD = Math.hypot(x + 6, z + 12);
+    if (pastureD < 4.4) {
+      tempColor.lerp(cGrassWarm, (1 - smoothstep(1.2, 4.4, pastureD)) * 0.65);
     }
 
     // Лёгкая цветовая вариация по шуму, чтобы поверхность была живой
