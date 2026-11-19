@@ -247,12 +247,14 @@ export const App: React.FC = () => {
   };
 
   const handleStartChronology = () => {
+    music.ensurePlaying();
     dismissWelcome();
     setMode('chronology');
     handleSelectEvent(CHRONOLOGY_EVENTS[0]);
   };
 
   const handleExploreAll = () => {
+    music.ensurePlaying();
     dismissWelcome();
     setMode('all');
     setSelectedLocationId(null);

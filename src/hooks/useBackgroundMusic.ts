@@ -22,26 +22,47 @@ export interface BackgroundMusicControls {
   isPlaying: boolean;
   volume: number;
   togglePlay: () => void;
+  ensurePlaying: () => void;
   setVolume: (next: number) => void;
 }
 
 /**
- * Управляет фоновой музыкой острова без предварительного декодирования в RAM
- * (preload="none", потоковое HTML5-аудио) и ставит на паузу при сворачивании вкладки.
+ * Управляет фоновой музыкой острова:
+ * - Включает воспроизведение сразу при входе на сайт (с авто-разблокировкой
+ *   по первому жесту пользователя, если браузер блокирует немой autoplay).
+ * - Уважает явную паузу пользователя (не перезапускает при кликах, если юзер сам выключил).
+ * - Ставит на паузу при сворачивании вкладки (visibilitychange).
  */
 export function useBackgroundMusic(): BackgroundMusicControls {
   const [isPlaying, setIsPlaying] = useState(false);
   const [volume, setVolumeState] = useState<number>(() => readInitialVolume());
 
   const audioRef = useRef<HTMLAudioElement | null>(null);
-  const wantPlayingRef = useRef(false);
+  const userManuallyPausedRef = useRef(false);
   const volumeRef = useRef(volume);
   volumeRef.current = volume;
+
+  const startPlayback = useCallback(() => {
+    const audio = audioRef.current;
+    if (!audio || userManuallyPausedRef.current) return;
+
+    audio.volume = volumeRef.current;
+    audio
+      .play()
+      .then(() => {
+        setIsPlaying(true);
+      })
+      .catch(() => {
+        // Браузерная политика autoplay заблокировала запуск без жеста.
+        // Ожидаем первого касания/клика через capture-слушатели.
+        setIsPlaying(false);
+      });
+  }, []);
 
   useEffect(() => {
     const audio = document.createElement('audio');
     audio.loop = true;
-    audio.preload = 'none';
+    audio.preload = 'auto';
     audio.volume = volumeRef.current;
 
     const oggSource = document.createElement('source');
@@ -56,53 +77,85 @@ export function useBackgroundMusic(): BackgroundMusicControls {
     audio.appendChild(mp3Source);
     audioRef.current = audio;
 
+    const onPlay = () => setIsPlaying(true);
+    const onPause = () => setIsPlaying(false);
+
+    audio.addEventListener('play', onPlay);
+    audio.addEventListener('pause', onPause);
+
+    // Разблокировка по первому клику/тапу в браузере с ограничениями autoplay
+    const unlockEvents: Array<keyof WindowEventMap> = ['pointerdown', 'touchstart', 'click', 'keydown'];
+    const handleFirstGesture = () => {
+      if (!userManuallyPausedRef.current) {
+        startPlayback();
+      }
+    };
+
+    unlockEvents.forEach((evt) => {
+      window.addEventListener(evt, handleFirstGesture, { capture: true, passive: true });
+    });
+
     const handleVisibilityChange = () => {
-      if (!audioRef.current || !wantPlayingRef.current) return;
+      const a = audioRef.current;
+      if (!a) return;
       if (document.hidden) {
-        audioRef.current.pause();
-      } else {
-        audioRef.current.play().catch(() => {
-          wantPlayingRef.current = false;
-          setIsPlaying(false);
-        });
+        a.pause();
+      } else if (!userManuallyPausedRef.current) {
+        startPlayback();
       }
     };
 
     document.addEventListener('visibilitychange', handleVisibilityChange);
 
+    // Пытаемся запустить воспроизведение сразу при входе на сайт
+    startPlayback();
+
     return () => {
+      unlockEvents.forEach((evt) => {
+        window.removeEventListener(evt, handleFirstGesture, { capture: true });
+      });
       document.removeEventListener('visibilitychange', handleVisibilityChange);
+      audio.removeEventListener('play', onPlay);
+      audio.removeEventListener('pause', onPause);
       audio.pause();
       audio.replaceChildren();
       audio.removeAttribute('src');
-      audio.load();
+      try {
+        audio.load();
+      } catch {
+        // ignore in environments without full media element implementation (e.g. jsdom)
+      }
       audioRef.current = null;
     };
-  }, []);
+  }, [startPlayback]);
 
   const togglePlay = useCallback(() => {
     const audio = audioRef.current;
     if (!audio) return;
 
-    if (wantPlayingRef.current && !audio.paused) {
-      wantPlayingRef.current = false;
+    if (!audio.paused) {
+      userManuallyPausedRef.current = true;
       audio.pause();
       setIsPlaying(false);
       return;
     }
 
+    userManuallyPausedRef.current = false;
     audio.volume = volumeRef.current;
-    wantPlayingRef.current = true;
     audio
       .play()
       .then(() => {
         setIsPlaying(true);
       })
       .catch(() => {
-        wantPlayingRef.current = false;
         setIsPlaying(false);
       });
   }, []);
+
+  const ensurePlaying = useCallback(() => {
+    userManuallyPausedRef.current = false;
+    startPlayback();
+  }, [startPlayback]);
 
   const setVolume = useCallback((next: number) => {
     const clamped = Math.max(0, Math.min(1, Number.isFinite(next) ? next : DEFAULT_VOLUME));
@@ -118,5 +171,5 @@ export function useBackgroundMusic(): BackgroundMusicControls {
     }
   }, []);
 
-  return { isPlaying, volume, togglePlay, setVolume };
+  return { isPlaying, volume, togglePlay, ensurePlaying, setVolume };
 }
