@@ -1,0 +1,78 @@
+import type { RouteDefinition } from '../types/island';
+
+export const ISLAND_ROUTES: RouteDefinition[] = [
+  {
+    id: 'route-raft',
+    name: 'Рейсы на плоту с тонущего корабля',
+    fromStage: 2,
+    toStage: 3,
+    color: '#f2c97d',
+    isSea: true,
+    points: [
+      [20, 28],
+      [18, 25],
+      [15, 22.5],
+      [12, 20],
+    ],
+  },
+  {
+    id: 'route-valley',
+    name: 'Экспедиция в Благодатную долину',
+    fromStage: 7,
+    color: '#73c67b',
+    isSea: false,
+    points: [
+      [10, 10],
+      [5, 11],
+      [0, 8],
+      [-6, 5],
+      [-12, 4],
+    ],
+  },
+  {
+    id: 'route-voyage',
+    name: 'Морской поход вокруг Мыса Течений',
+    fromStage: 14,
+    color: '#4de2d8',
+    isSea: true,
+    points: [
+      [25, -13],
+      [33, -10],
+      [39, -1],
+      [39, 9],
+      [32, 16],
+      [22, 21],
+      [14, 21],
+    ],
+  },
+  {
+    id: 'route-friday',
+    name: 'Спасение Пятницы и путь в Крепость',
+    fromStage: 18,
+    color: '#ff9666',
+    isSea: false,
+    points: [
+      [-21, 19],
+      [-18, 13],
+      [-15, 4],
+      [-17, -7],
+      [-6, 2],
+      [3, 8],
+      [10, 10],
+    ],
+  },
+  {
+    id: 'route-departure',
+    name: 'Отплытие английского фрегата (1686)',
+    fromStage: 20,
+    color: '#ffe5a3',
+    isSea: true,
+    points: [
+      [11, 20],
+      [4, 24],
+      [-3, 28],
+      [-8, 31],
+      [-16, 40],
+    ],
+  },
+];
